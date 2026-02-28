@@ -90,10 +90,13 @@ export default function Analyser() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/map-legacy-code", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        "https://ijgwqdiuyweofdd-legacycoderestoration.hf.space/map-legacy-code",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data: MappingResponse = await res.json();
       setResults(data.results);
@@ -108,14 +111,17 @@ export default function Analyser() {
     setReconstructing((prev) => ({ ...prev, [item.filename]: true }));
     setError(null);
     try {
-      const res = await fetch("http://localhost:8000/reconstruct-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          manifest: item.logic_manifest,
-          mermaid_code: item.mermaid_code,
-        }),
-      });
+      const res = await fetch(
+        "https://ijgwqdiuyweofdd-legacycoderestoration.hf.space/reconstruct-code",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            manifest: item.logic_manifest,
+            mermaid_code: item.mermaid_code,
+          }),
+        },
+      );
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data: ReconstructResponse = await res.json();
       setReconstructions((prev) => ({ ...prev, [item.filename]: data }));

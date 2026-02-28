@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Zap,
   Terminal,
+  Link,
 } from "lucide-react";
 
 // --- Sub-Components (Keep the main file clean) ---
@@ -83,9 +84,11 @@ export default function Home() {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <button className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-xl shadow-indigo-600/20 active:scale-95">
-                Start Analysis
-              </button>
+              <Link href="/analyser">
+                <button className="w-full sm:w-auto px-8 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition-all shadow-xl shadow-indigo-600/20 active:scale-95">
+                  Start Analysis
+                </button>
+              </Link>
               <button className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 font-bold transition-all">
                 View Sample
               </button>
