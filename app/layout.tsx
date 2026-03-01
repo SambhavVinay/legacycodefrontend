@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Legacy Archaeologist Mapper",
-  description: "Upload legacy code files to generate logic manifests and Mermaid.js flowcharts.",
+  description:
+    "Upload legacy code files to generate logic manifests and Mermaid.js flowcharts.",
 };
 
 export default function RootLayout({
@@ -23,8 +24,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className="dark">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {children}
       </body>
     </html>

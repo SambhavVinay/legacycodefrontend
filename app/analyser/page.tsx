@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Code2,
   Upload as UploadIcon,
@@ -10,11 +10,73 @@ import {
   ChevronDown,
   Trash2,
   Cpu,
+  Terminal,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+// Mock imports - ensure these components exist in your project
 import MermaidChart from "../components/MermaidChart";
 import ManifestViewer from "../components/ManifestViewer";
 import FileTreeViewer from "../components/FileTreeViewer";
 
+/** * --- AITextLoading Component ---
+ * Sophisticated monochrome loading state
+ */
+interface AITextLoadingProps {
+  texts?: string[];
+  className?: string;
+  interval?: number;
+}
+
+function AITextLoading({
+  texts = [
+    "INITIATING_SCAN...",
+    "DECONSTRUCTING_LOGIC...",
+    "MAPPING_DEPENDENCIES...",
+    "EXTRACTING_MANIFEST...",
+    "FINALIZING_RESTORATION...",
+  ],
+  className,
+  interval = 3000,
+}: AITextLoadingProps) {
+  const [currentTextIndex, setCurrentTextIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTextIndex((prevIndex) => (prevIndex + 1) % texts.length);
+    }, interval);
+    return () => clearInterval(timer);
+  }, [interval, texts.length]);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8">
+      <motion.div
+        className="relative px-4 py-2 w-full text-center"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentTextIndex}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            className={cn(
+              "font-mono text-xl md:text-2xl tracking-widest text-white/90 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]",
+              className,
+            )}
+          >
+            {texts[currentTextIndex]}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
+
+/** * --- Main Page Component ---
+ */
 interface FileMappingResult {
   filename: string;
   logic_manifest: string;
@@ -54,6 +116,8 @@ export default function Analyser() {
   >({});
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const isAnyTaskRunning =
+    loading || Object.values(reconstructing).some(Boolean);
   const hasInput =
     activeTab === "upload" ? files.length > 0 : pasteCode.trim().length > 0;
 
@@ -74,12 +138,10 @@ export default function Analyser() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasInput) return;
-
     setLoading(true);
     setError(null);
     setResults([]);
     setReconstructions({});
-    setExpandedSections({});
 
     const formData = new FormData();
     if (activeTab === "upload") {
@@ -137,45 +199,63 @@ export default function Analyser() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d0d0f] text-white selection:bg-indigo-500/30">
-      <header className="border-b border-white/8 backdrop-blur-md sticky top-0 z-20 bg-[#0d0d0f]/80">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/40 group-hover:bg-indigo-500 transition-colors">
-              <Code2 className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl tracking-tight">
-              Legacy Archaeologist
-            </span>
-          </a>
-          <a
-            href="/"
-            className="text-sm text-slate-400 hover:text-white transition-colors"
-          >
-            ← Quick Convert
-          </a>
-        </div>
-      </header>
+    <div className="min-h-screen bg-black text-white selection:bg-white/20 relative overflow-x-hidden">
+      {/* GLOW EFFECTS */}
+      <div className="fixed top-1/4 -left-20 w-64 h-96 bg-white/5 blur-[120px] pointer-events-none rounded-full" />
+      <div className="fixed bottom-1/4 -right-20 w-64 h-96 bg-white/5 blur-[120px] pointer-events-none rounded-full" />
 
-      <main className="max-w-6xl mx-auto px-6 py-12">
-        <div className="rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden shadow-2xl">
-          <div className="flex border-b border-white/8">
+      {/* FULL SCREEN OVERLAY */}
+      <AnimatePresence>
+        {isAnyTaskRunning && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md"
+          >
+            <div className="flex flex-col items-center">
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-white/20 blur-2xl animate-pulse rounded-full" />
+                <Loader2 className="w-12 h-12 text-white animate-spin relative z-10" />
+              </div>
+              <AITextLoading
+                texts={
+                  loading
+                    ? undefined
+                    : [
+                        "GENERATING_ASSETS...",
+                        "RESTRUCTURING...",
+                        "OPTIMIZING...",
+                        "POLISHING...",
+                      ]
+                }
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main
+        className={cn(
+          "max-w-5xl mx-auto px-6 py-16 transition-all duration-700",
+          isAnyTaskRunning
+            ? "blur-xl scale-[0.95] opacity-50"
+            : "blur-0 scale-100 opacity-100",
+        )}
+      >
+        <div className="rounded-xl border border-white/10 bg-[#050505] overflow-hidden shadow-[0_0_50px_-12px_rgba(255,255,255,0.05)]">
+          <div className="flex bg-neutral-900/30">
             {(["upload", "paste"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-2 px-8 py-4 text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-8 py-4 text-xs font-bold tracking-widest uppercase transition-all ${
                   activeTab === tab
-                    ? "text-white border-b-2 border-indigo-500 bg-white/[0.02]"
-                    : "text-white/40 hover:text-white/70"
+                    ? "text-white bg-white/5 border-b border-white"
+                    : "text-white/30 hover:text-white/60"
                 }`}
               >
-                {tab === "upload" ? (
-                  <UploadIcon className="w-4 h-4" />
-                ) : (
-                  <FileCode className="w-4 h-4" />
-                )}
-                {tab === "upload" ? "Upload Files" : "Paste Code"}
+                {tab === "upload" ? "Files" : "Source"}
               </button>
             ))}
           </div>
@@ -190,10 +270,10 @@ export default function Analyser() {
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => inputRef.current?.click()}
-                className={`relative rounded-2xl border-2 border-dashed p-16 text-center cursor-pointer transition-all ${
+                className={`relative rounded-lg border border-dashed p-16 text-center cursor-pointer transition-all ${
                   dragOver
-                    ? "border-indigo-500 bg-indigo-500/10"
-                    : "border-white/10 hover:border-white/20 hover:bg-white/[0.01]"
+                    ? "border-white bg-white/5"
+                    : "border-white/10 hover:border-white/30"
                 }`}
               >
                 <input
@@ -205,20 +285,20 @@ export default function Analyser() {
                   className="hidden"
                   onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
                 />
-                <UploadIcon className="w-10 h-10 mx-auto mb-4 text-white/20" />
-                <p className="text-white/80 font-medium">
-                  Drop files here or click to browse
+                <UploadIcon className="w-8 h-8 mx-auto mb-4 text-white/20" />
+                <p className="text-white/40 text-sm font-mono tracking-tighter italic">
+                  DRAG_AND_DROP_ASSETS
                 </p>
                 {files.length > 0 && (
-                  <div className="mt-6 flex flex-wrap justify-center gap-2">
+                  <div className="mt-8 flex flex-wrap justify-center gap-2">
                     {files.map((f, i) => (
                       <span
                         key={i}
-                        className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs flex items-center gap-2"
+                        className="px-3 py-1 bg-white/5 border border-white/10 rounded font-mono text-[10px] text-white/60 flex items-center gap-2 uppercase tracking-tighter"
                       >
                         {f.name}
                         <Trash2
-                          className="w-3 h-3 cursor-pointer hover:text-red-400"
+                          className="w-3 h-3 cursor-pointer hover:text-white"
                           onClick={(e) => {
                             e.stopPropagation();
                             setFiles((prev) => {
@@ -240,51 +320,54 @@ export default function Analyser() {
                   type="text"
                   value={pasteFileName ?? ""}
                   onChange={(e) => setPasteFileName(e.target.value)}
-                  placeholder="filename.py"
-                  className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm w-64 focus:ring-1 focus:ring-indigo-500 outline-none"
+                  placeholder="module_name.py"
+                  className="bg-black border border-white/10 rounded px-4 py-2 text-xs font-mono w-full focus:border-white outline-none transition-colors"
                 />
                 <textarea
                   value={pasteCode ?? ""}
                   onChange={(e) => setPasteCode(e.target.value)}
-                  className="w-full h-80 bg-white/[0.01] border border-white/10 rounded-2xl p-6 font-mono text-sm outline-none focus:ring-1 focus:ring-indigo-500"
-                  placeholder="// Paste your legacy logic here..."
+                  className="w-full h-80 bg-black border border-white/10 rounded-lg p-6 font-mono text-sm outline-none focus:border-white transition-colors"
+                  placeholder="// Paste raw logic here..."
                 />
               </div>
             )}
             <button
               disabled={!hasInput || loading}
-              className="w-full py-4 bg-indigo-600 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+              className="w-full py-4 bg-white text-black font-black uppercase tracking-[0.3em] text-xs hover:bg-neutral-200 transition-all disabled:opacity-20 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
             >
               {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                <Loader2 className="w-4 h-4 animate-spin mx-auto" />
               ) : (
-                <Sparkles className="w-5 h-5" />
+                "EXECUTE_ANALYSIS"
               )}
-              {loading ? "Analyzing Architecture..." : "Analyze Codebase"}
             </button>
           </form>
         </div>
 
         {error && (
-          <div className="mt-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-            {error}
+          <div className="mt-8 p-4 border border-white/20 bg-white/5 font-mono text-[11px] text-white/70 uppercase">
+            [!] Error: {error}
           </div>
         )}
 
         {results.map((item) => (
           <div
             key={item.filename}
-            className="mt-16 space-y-6 animate-in fade-in slide-in-from-bottom-4"
+            className="mt-24 space-y-12 animate-in fade-in duration-1000"
           >
-            <div className="flex items-center gap-3 border-l-4 border-indigo-500 pl-4">
-              <h2 className="text-2xl font-bold">{item.filename}</h2>
+            <div className="flex items-center gap-4">
+              <div className="h-[1px] flex-1 bg-white/10" />
+              <h2 className="text-sm font-mono tracking-[0.5em] text-white/40 uppercase">
+                {item.filename}
+              </h2>
+              <div className="h-[1px] flex-1 bg-white/10" />
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 gap-8">
               <ResultCard
-                title="System Logic Manifest"
-                accent="violet"
-                icon="🗂️"
+                title="LOGIC_MANIFEST"
+                accent="white"
+                icon={<FileCode className="w-4 h-4" />}
                 expanded={expandedSections[item.filename]?.manifest ?? true}
                 onToggle={() => toggleSection(item.filename, "manifest")}
               >
@@ -292,8 +375,8 @@ export default function Analyser() {
               </ResultCard>
 
               <ResultCard
-                title="Process Flow Diagram"
-                accent="cyan"
+                title="ARCHITECTURAL_FLOW"
+                accent="white"
                 icon={<Cpu className="w-4 h-4" />}
                 expanded={expandedSections[item.filename]?.diagram ?? true}
                 onToggle={() => toggleSection(item.filename, "diagram")}
@@ -303,9 +386,9 @@ export default function Analyser() {
 
               {reconstructions[item.filename] ? (
                 <ResultCard
-                  title="Modernized Project Artifacts"
-                  accent="emerald"
-                  icon={<FileCode className="w-4 h-4" />}
+                  title="MODERNIZED_OUTPUT"
+                  accent="white"
+                  icon={<Sparkles className="w-4 h-4" />}
                   expanded={expandedSections[item.filename]?.recon ?? true}
                   onToggle={() => toggleSection(item.filename, "recon")}
                 >
@@ -319,16 +402,13 @@ export default function Analyser() {
                 <button
                   onClick={() => handleReconstruct(item)}
                   disabled={reconstructing[item.filename]}
-                  className="w-full py-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400 font-bold transition-all flex items-center justify-center gap-3 group shadow-xl"
+                  className="w-full py-12 border border-white/10 bg-neutral-900/20 hover:bg-white hover:text-black text-white font-bold uppercase tracking-[0.4em] text-[10px] transition-all flex items-center justify-center gap-3 group"
                 >
                   {reconstructing[item.filename] ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                   ) : (
-                    <Sparkles className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                    "RECONSTRUCT_SYSTEM_ARCHITECTURE"
                   )}
-                  {reconstructing[item.filename]
-                    ? "Building Modern Architecture..."
-                    : "Reconstruct as Production-Ready FastAPI App"}
                 </button>
               )}
             </div>
@@ -339,37 +419,32 @@ export default function Analyser() {
   );
 }
 
-function ResultCard({
-  title,
-  icon,
-  accent,
-  expanded,
-  onToggle,
-  children,
-}: any) {
-  const borders: Record<string, string> = {
-    violet: "border-violet-500/20",
-    cyan: "border-cyan-500/20",
-    emerald: "border-emerald-500/20",
-  };
+function ResultCard({ title, icon, expanded, onToggle, children }: any) {
   return (
-    <div
-      className={`rounded-2xl border ${borders[accent]} bg-white/[0.02] overflow-hidden`}
-    >
+    <div className="rounded border border-white/5 bg-black overflow-hidden hover:border-white/20 transition-colors">
       <button
         onClick={onToggle}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/[0.01]"
+        className="w-full px-6 py-4 flex items-center justify-between bg-neutral-900/20"
       >
-        <div className="flex items-center gap-3 font-semibold text-white/80">
+        <div className="flex items-center gap-4 font-mono text-[11px] tracking-[0.3em] text-white/60">
           {icon} {title}
         </div>
         <ChevronDown
-          className={`w-5 h-5 text-white/20 transition-transform ${expanded ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-white/20 transition-transform ${expanded ? "rotate-180" : ""}`}
         />
       </button>
-      {expanded && (
-        <div className="p-6 pt-0 border-t border-white/5 mt-4">{children}</div>
-      )}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-t border-white/5 p-6"
+          >
+            {children}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
